@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Clon · Águila & Conejo</title>
+    <title>Pxndorx · Águila & Conejo</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -114,8 +114,8 @@
 <div class="toast" id="toast"></div>
 
 <div id="loginScreen" class="login-container">
-    <h1><i class="fas fa-paper-plane" style="color:#4f8cc9;margin-right:8px"></i>Telegram</h1>
-    <p>selecciona tu perfil</p>
+    <h1><i class="fas fa-paper-plane" style="color:#4f8cc9;margin-right:8px"></i>Pxndorx</h1>
+    <p>Selecciona tu perfil</p>
     <div class="user-cards">
         <div class="user-card" id="cardEagle">
             <i class="fas fa-crown"></i>
@@ -331,9 +331,9 @@
         unreadInfo.textContent = `📬 ${totalUnread} no leídos`;
         
         if (totalUnread > 0) {
-            document.title = `(${totalUnread}) Telegram Clon`;
+            document.title = `(${totalUnread}) Pxndorx`;
         } else {
-            document.title = 'Telegram Clon';
+            document.title = 'Pxndorx';
         }
     }
 
@@ -1003,14 +1003,14 @@
     function saveSession() {
         if (currentUser) {
             try {
-                sessionStorage.setItem('telegram_user', currentUser);
+                sessionStorage.setItem('pxndorx_user', currentUser);
             } catch (e) {}
         }
     }
 
     function loadSession() {
         try {
-            const saved = sessionStorage.getItem('telegram_user');
+            const saved = sessionStorage.getItem('pxndorx_user');
             if (saved && (saved === 'eagle' || saved === 'rabbit')) {
                 return saved;
             }
@@ -1020,7 +1020,7 @@
 
     function clearSession() {
         try {
-            sessionStorage.removeItem('telegram_user');
+            sessionStorage.removeItem('pxndorx_user');
         } catch (e) {}
     }
 
@@ -1089,7 +1089,7 @@
         updateStatus('⚪ Desconectado', false);
         userStatus.textContent = '👤 Sin usuario';
         unreadInfo.textContent = '📬 0 no leídos';
-        document.title = 'Telegram Clon';
+        document.title = 'Pxndorx';
         
         startNotificationCheck();
         
