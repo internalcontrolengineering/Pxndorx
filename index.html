@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
-        body{background:#0e1621;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}
+        body{background:#0e1621;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:0;margin:0}
         .login-container{background:#17212b;border-radius:28px;padding:40px 30px;max-width:500px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,0.6);text-align:center}
         .login-container h1{color:#e8edf0;font-weight:400;font-size:1.8rem;letter-spacing:1px;margin-bottom:10px}
         .login-container p{color:#8b9ba8;margin-bottom:30px;font-size:.95rem}
@@ -32,9 +32,9 @@
         .password-box .error-msg{color:#e06b6b;font-size:.85rem;min-height:20px}
         .password-box button{background:#4f8cc9;border:none;padding:10px 30px;border-radius:30px;color:#fff;font-weight:600;font-size:1rem;cursor:pointer;transition:.15s;width:100%;max-width:180px}
         .password-box button:hover{background:#3a75b0}
-        .chat-container{display:none;flex-direction:column;background:#17212b;border-radius:28px;width:100%;max-width:800px;height:650px;box-shadow:0 20px 40px rgba(0,0,0,0.6);overflow:hidden}
+        .chat-container{display:none;flex-direction:column;background:#17212b;width:100vw;height:100vh;box-shadow:0 20px 40px rgba(0,0,0,0.6);overflow:hidden;border-radius:0}
         .chat-container.active{display:flex}
-        .chat-header{background:#1e2a36;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #2f4050}
+        .chat-header{background:#1e2a36;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #2f4050;flex-shrink:0}
         .chat-header .user-info{display:flex;align-items:center;gap:12px}
         .chat-header .user-info i{font-size:2.2rem}
         .chat-header .user-info .fa-crown{color:#f5b342}
@@ -45,7 +45,16 @@
         .chat-header .actions button:hover{color:#e8edf0;background:#2f4050}
         .chat-header .actions .delete-history{color:#d47c7c}
         .chat-header .actions .delete-history:hover{color:#f59898;background:#3e2a2a}
-        .chat-messages{flex:1;padding:20px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;background:#0e1621}
+        .chat-messages{flex:1;padding:20px 18px 80px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;background:#0e1621;position:relative}
+        .scroll-down-btn{position:fixed;width:50px;height:50px;background:rgba(79,140,201,0.75);color:#fff;border:none;border-radius:50%;font-size:1.3rem;cursor:grab;box-shadow:0 4px 15px rgba(0,0,0,0.5);transition:background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;display:none;z-index:100;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.15);touch-action:none;user-select:none;align-items:center;justify-content:center}
+        .scroll-down-btn:hover{background:rgba(79,140,201,0.9);transform:scale(1.05);box-shadow:0 6px 25px rgba(79,140,201,0.4)}
+        .scroll-down-btn:active{cursor:grabbing;transform:scale(0.95)}
+        .scroll-down-btn.dragging{opacity:0.85;transform:scale(1.1);box-shadow:0 8px 30px rgba(79,140,201,0.6);cursor:grabbing}
+        .scroll-down-btn.visible{display:flex;animation:fadeInBtn 0.3s ease}
+        @keyframes fadeInBtn{from{opacity:0;transform:scale(0.8)}to{opacity:1;transform:scale(1)}}
+        .scroll-down-btn .badge{position:absolute;top:-5px;right:-5px;background:#e06b6b;color:#fff;border-radius:50%;padding:2px 7px;font-size:.65rem;font-weight:bold;min-width:20px;text-align:center;border:2px solid #17212b;pointer-events:none}
+        .scroll-down-btn .drag-hint{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);font-size:.5rem;color:rgba(255,255,255,0.5);white-space:nowrap;pointer-events:none;opacity:0;transition:opacity 0.3s ease}
+        .scroll-down-btn:hover .drag-hint{opacity:1}
         .message{max-width:80%;padding:10px 16px;border-radius:18px;font-size:.95rem;word-break:break-word;background:#1f2c38;color:#e8edf0;align-self:flex-start;border-bottom-left-radius:6px;position:relative;transition:all .2s ease}
         .message.unread{background:#2a3a4a;border-left:3px solid #4f8cc9}
         .message:hover .message-actions{opacity:1}
@@ -65,7 +74,7 @@
         .message .file-attachment.image{max-height:300px}
         .message .file-attachment.audio{width:100%;height:40px}
         .message .file-attachment.document{max-height:150px;object-fit:cover;background:#1e2a36;padding:10px}
-        .chat-input{background:#1e2a36;padding:14px 20px;display:flex;gap:12px;border-top:1px solid #2f4050;align-items:center}
+        .chat-input{background:#1e2a36;padding:14px 20px;display:flex;gap:12px;border-top:1px solid #2f4050;align-items:center;flex-shrink:0}
         .chat-input input[type="text"]{flex:1;background:#0e1621;border:none;border-radius:30px;padding:12px 20px;color:#e8edf0;font-size:.95rem;outline:2px solid #2f4050;transition:.15s}
         .chat-input input[type="text"]:focus{outline-color:#4f8cc9}
         .chat-input input[type="text"]:disabled{opacity:.5;cursor:not-allowed}
@@ -81,8 +90,8 @@
         .chat-input .file-info .file-size{color:#6b7f8f;font-size:.65rem}
         .chat-input .file-info .remove-file{color:#e06b6b;cursor:pointer;padding:0 4px}
         .chat-input .file-info .remove-file:hover{color:#f59898}
-        @media(max-width:550px){.user-cards{gap:12px}.user-card{width:120px;padding:18px 12px}.login-container{padding:30px 15px}.chat-container{height:500px}}
-        .debug-info{background:#1e2a36;color:#8b9ba8;font-size:.7rem;padding:8px 20px;border-top:1px solid #2f4050;display:flex;justify-content:space-between}
+        @media(max-width:550px){.user-cards{gap:12px}.user-card{width:120px;padding:18px 12px}.login-container{padding:30px 15px}.scroll-down-btn{width:44px;height:44px;font-size:1.1rem}}
+        .debug-info{background:#1e2a36;color:#8b9ba8;font-size:.7rem;padding:8px 20px;border-top:1px solid #2f4050;display:flex;justify-content:space-between;flex-shrink:0}
         .debug-info .unread-count{color:#e06b6b;font-weight:bold}
         .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);justify-content:center;align-items:center;z-index:1000}
         .modal.active{display:flex}
@@ -156,7 +165,13 @@
             </button>
         </div>
     </div>
-    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-messages" id="chatMessages">
+        <button class="scroll-down-btn" id="scrollDownBtn" title="Ir al mensaje más reciente (arrastra para mover)">
+            <i class="fas fa-arrow-down"></i>
+            <span class="badge" id="newMessagesBadge" style="display:none;">0</span>
+            <span class="drag-hint">↕ arrastra</span>
+        </button>
+    </div>
     <div class="upload-progress" id="uploadProgress">
         <span id="uploadStatus">Subiendo archivo...</span>
         <div class="progress-bar">
@@ -214,6 +229,7 @@
     let notificationCheckInterval = null;
     let isChatOpen = false;
     let selectedFiles = [];
+    let newMessagesSinceLastView = 0;
 
     // DOM refs
     const loginScreen = document.getElementById('loginScreen');
@@ -255,8 +271,125 @@
     const selectedFileName = document.getElementById('selectedFileName');
     const selectedFileSize = document.getElementById('selectedFileSize');
     const removeFileBtn = document.getElementById('removeFileBtn');
+    const scrollDownBtn = document.getElementById('scrollDownBtn');
+    const newMessagesBadge = document.getElementById('newMessagesBadge');
     let toastTimeout = null;
     let lastNotificationTime = 0;
+
+    // Drag functionality for scroll button
+    let isDragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+    let btnPosition = { x: window.innerWidth - 80, y: window.innerHeight - 150 };
+
+    function initDragButton() {
+        // Posición inicial
+        scrollDownBtn.style.left = (window.innerWidth - 80) + 'px';
+        scrollDownBtn.style.top = (window.innerHeight - 150) + 'px';
+        scrollDownBtn.style.right = 'auto';
+        scrollDownBtn.style.bottom = 'auto';
+
+        const onDragStart = (e) => {
+            if (e.type === 'touchstart') {
+                const touch = e.touches[0];
+                const rect = scrollDownBtn.getBoundingClientRect();
+                dragOffsetX = touch.clientX - rect.left;
+                dragOffsetY = touch.clientY - rect.top;
+            } else {
+                const rect = scrollDownBtn.getBoundingClientRect();
+                dragOffsetX = e.clientX - rect.left;
+                dragOffsetY = e.clientY - rect.top;
+            }
+            isDragging = true;
+            scrollDownBtn.classList.add('dragging');
+            e.preventDefault();
+        };
+
+        const onDragMove = (e) => {
+            if (!isDragging) return;
+            
+            let clientX, clientY;
+            if (e.type === 'touchmove') {
+                const touch = e.touches[0];
+                clientX = touch.clientX;
+                clientY = touch.clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            let newX = clientX - dragOffsetX;
+            let newY = clientY - dragOffsetY;
+            
+            // Mantener dentro de la pantalla
+            const btnWidth = scrollDownBtn.offsetWidth || 50;
+            const btnHeight = scrollDownBtn.offsetHeight || 50;
+            newX = Math.max(0, Math.min(window.innerWidth - btnWidth, newX));
+            newY = Math.max(0, Math.min(window.innerHeight - btnHeight, newY));
+            
+            scrollDownBtn.style.left = newX + 'px';
+            scrollDownBtn.style.top = newY + 'px';
+            scrollDownBtn.style.right = 'auto';
+            scrollDownBtn.style.bottom = 'auto';
+            
+            btnPosition.x = newX;
+            btnPosition.y = newY;
+            e.preventDefault();
+        };
+
+        const onDragEnd = () => {
+            if (isDragging) {
+                isDragging = false;
+                scrollDownBtn.classList.remove('dragging');
+            }
+        };
+
+        // Eventos mouse
+        scrollDownBtn.addEventListener('mousedown', onDragStart);
+        document.addEventListener('mousemove', onDragMove);
+        document.addEventListener('mouseup', onDragEnd);
+
+        // Eventos touch
+        scrollDownBtn.addEventListener('touchstart', onDragStart, { passive: false });
+        document.addEventListener('touchmove', onDragMove, { passive: false });
+        document.addEventListener('touchend', onDragEnd);
+        document.addEventListener('touchcancel', onDragEnd);
+
+        // Asegurar que el click no se dispare al arrastrar
+        let clickPrevented = false;
+        scrollDownBtn.addEventListener('click', (e) => {
+            if (isDragging || clickPrevented) {
+                e.preventDefault();
+                clickPrevented = false;
+                return;
+            }
+            scrollToBottom();
+        });
+
+        // Prevenir click si hubo movimiento
+        let startPos = { x: 0, y: 0 };
+        scrollDownBtn.addEventListener('mousedown', (e) => {
+            startPos.x = e.clientX;
+            startPos.y = e.clientY;
+        });
+        scrollDownBtn.addEventListener('mouseup', (e) => {
+            const dx = e.clientX - startPos.x;
+            const dy = e.clientY - startPos.y;
+            if (Math.sqrt(dx*dx + dy*dy) > 5) {
+                clickPrevented = true;
+            }
+        });
+
+        // Manejar redimensionamiento de ventana
+        window.addEventListener('resize', () => {
+            const btnWidth = scrollDownBtn.offsetWidth || 50;
+            const btnHeight = scrollDownBtn.offsetHeight || 50;
+            btnPosition.x = Math.min(btnPosition.x, window.innerWidth - btnWidth);
+            btnPosition.y = Math.min(btnPosition.y, window.innerHeight - btnHeight);
+            scrollDownBtn.style.left = btnPosition.x + 'px';
+            scrollDownBtn.style.top = btnPosition.y + 'px';
+        });
+    }
 
     function showToast(msg, type = 'info', duration = 3000) {
         toast.textContent = msg;
@@ -334,6 +467,13 @@
             document.title = `(${totalUnread}) Pxndorx`;
         } else {
             document.title = 'Pxndorx';
+        }
+        
+        if (newMessagesSinceLastView > 0) {
+            newMessagesBadge.textContent = newMessagesSinceLastView;
+            newMessagesBadge.style.display = 'block';
+        } else {
+            newMessagesBadge.style.display = 'none';
         }
     }
 
@@ -490,148 +630,183 @@
         return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
+    function isNearBottom() {
+        const threshold = 100;
+        const scrollTop = chatMessages.scrollTop;
+        const scrollHeight = chatMessages.scrollHeight;
+        const clientHeight = chatMessages.clientHeight;
+        return scrollHeight - scrollTop - clientHeight < threshold;
+    }
+
+    function updateScrollButton() {
+        if (isNearBottom()) {
+            scrollDownBtn.classList.remove('visible');
+            newMessagesSinceLastView = 0;
+            updateUnreadBadges();
+        } else {
+            scrollDownBtn.classList.add('visible');
+        }
+    }
+
+    function scrollToBottom() {
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        scrollDownBtn.classList.remove('visible');
+        newMessagesSinceLastView = 0;
+        updateUnreadBadges();
+        if (isChatOpen && currentUser) {
+            setTimeout(() => markMessagesAsRead(), 500);
+        }
+    }
+
     function renderMessages() {
+        const shouldScrollToBottom = isNearBottom();
+        
         chatMessages.innerHTML = '';
         if (!messages.length) {
             const empty = document.createElement('div');
             empty.style.cssText = 'color:#6b7f8f;text-align:center;margin-top:40px;font-size:.9rem';
             empty.innerText = 'No hay mensajes aún';
             chatMessages.appendChild(empty);
-            return;
+        } else {
+            messages.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = 'message';
+                if (msg.sender === currentUser) div.classList.add('own');
+                
+                if (msg.sender !== currentUser && !msg.is_read && isChatOpen) {
+                    div.classList.add('unread');
+                }
+                
+                div.dataset.messageId = msg.id;
+
+                const senderSpan = document.createElement('div');
+                senderSpan.className = 'msg-sender';
+                const icon = msg.sender === 'eagle' ? '👑' : '🐇';
+                const name = msg.sender === 'eagle' ? 'Águila' : 'Conejo';
+                senderSpan.innerHTML = icon + ' ' + name;
+
+                const textSpan = document.createElement('div');
+                textSpan.className = 'msg-text';
+                textSpan.innerText = msg.text || '';
+
+                if (msg.file_url) {
+                    const fileType = getFileType(msg.file_name || 'archivo');
+                    const fileIcon = getFileIcon(fileType);
+                    
+                    if (fileType === 'image') {
+                        const img = document.createElement('img');
+                        img.className = 'file-attachment image';
+                        img.src = msg.file_url;
+                        img.alt = msg.file_name || 'Imagen adjunta';
+                        img.loading = 'lazy';
+                        img.onclick = () => openFileModal(msg.file_url, msg.file_name, fileType);
+                        textSpan.appendChild(img);
+                    } else if (fileType === 'video') {
+                        const video = document.createElement('video');
+                        video.className = 'file-attachment video';
+                        video.src = msg.file_url;
+                        video.controls = true;
+                        video.preload = 'metadata';
+                        video.onclick = () => openFileModal(msg.file_url, msg.file_name, fileType);
+                        textSpan.appendChild(video);
+                    } else if (fileType === 'audio') {
+                        const audio = document.createElement('audio');
+                        audio.className = 'file-attachment audio';
+                        audio.src = msg.file_url;
+                        audio.controls = true;
+                        audio.preload = 'metadata';
+                        audio.onclick = () => openFileModal(msg.file_url, msg.file_name, fileType);
+                        textSpan.appendChild(audio);
+                        
+                        const audioName = document.createElement('div');
+                        audioName.style.cssText = 'font-size:.8rem;color:#8b9ba8;margin-top:4px';
+                        audioName.textContent = '🎵 ' + (msg.file_name || 'Audio');
+                        textSpan.appendChild(audioName);
+                    } else {
+                        const fileDiv = document.createElement('div');
+                        fileDiv.className = 'file-attachment document';
+                        fileDiv.style.cssText = 'display:flex;align-items:center;gap:12px;background:#1e2a36;padding:10px 16px;border-radius:8px;cursor:pointer;';
+                        fileDiv.onclick = () => openFileModal(msg.file_url, msg.file_name, fileType);
+                        
+                        const iconEl = document.createElement('i');
+                        iconEl.className = 'fas ' + fileIcon;
+                        iconEl.style.cssText = 'font-size:1.5rem;color:#4f8cc9';
+                        
+                        const infoDiv = document.createElement('div');
+                        infoDiv.style.cssText = 'flex:1;min-width:0';
+                        const nameSpan = document.createElement('div');
+                        nameSpan.style.cssText = 'font-weight:500;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+                        nameSpan.textContent = getFileIconText(msg.file_name) + ' ' + (msg.file_name || 'Archivo adjunto');
+                        const sizeSpan = document.createElement('div');
+                        sizeSpan.style.cssText = 'font-size:.7rem;opacity:.7';
+                        sizeSpan.textContent = getFileSize(msg.file_size || 0);
+                        
+                        infoDiv.appendChild(nameSpan);
+                        infoDiv.appendChild(sizeSpan);
+                        fileDiv.appendChild(iconEl);
+                        fileDiv.appendChild(infoDiv);
+                        
+                        const downloadBtn = document.createElement('button');
+                        downloadBtn.innerHTML = '<i class="fas fa-download"></i>';
+                        downloadBtn.style.cssText = 'background:transparent;border:none;color:#a0b8c9;cursor:pointer;font-size:1rem;padding:4px 8px;border-radius:4px;transition:.15s';
+                        downloadBtn.onclick = (e) => {
+                            e.stopPropagation();
+                            window.open(msg.file_url, '_blank');
+                        };
+                        downloadBtn.onmouseover = () => downloadBtn.style.background = '#2f4050';
+                        downloadBtn.onmouseout = () => downloadBtn.style.background = 'transparent';
+                        fileDiv.appendChild(downloadBtn);
+                        
+                        textSpan.appendChild(fileDiv);
+                    }
+                }
+
+                const timeSpan = document.createElement('div');
+                timeSpan.className = 'msg-time';
+                
+                const timeText = document.createElement('span');
+                timeText.textContent = formatFullDate(msg.created_at);
+                timeSpan.appendChild(timeText);
+                
+                if (msg.sender === currentUser) {
+                    const readStatus = document.createElement('span');
+                    readStatus.className = 'read-status';
+                    if (msg.is_read) {
+                        readStatus.textContent = '✓✓ Leído';
+                        readStatus.classList.add('read');
+                    } else {
+                        readStatus.textContent = '✓ Enviado';
+                        readStatus.classList.add('unread');
+                    }
+                    timeSpan.appendChild(readStatus);
+                }
+
+                div.appendChild(senderSpan);
+                div.appendChild(textSpan);
+                div.appendChild(timeSpan);
+
+                if (currentUser === 'eagle') {
+                    const actions = document.createElement('div');
+                    actions.className = 'message-actions';
+                    const delBtn = document.createElement('button');
+                    delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                    delBtn.title = 'Eliminar este mensaje';
+                    delBtn.onclick = (e) => { e.stopPropagation(); deleteSingleMessage(msg.id); };
+                    actions.appendChild(delBtn);
+                    div.appendChild(actions);
+                }
+                chatMessages.appendChild(div);
+            });
         }
         
-        messages.forEach(msg => {
-            const div = document.createElement('div');
-            div.className = 'message';
-            if (msg.sender === currentUser) div.classList.add('own');
-            
-            if (msg.sender !== currentUser && !msg.is_read && isChatOpen) {
-                div.classList.add('unread');
-            }
-            
-            div.dataset.messageId = msg.id;
-
-            const senderSpan = document.createElement('div');
-            senderSpan.className = 'msg-sender';
-            const icon = msg.sender === 'eagle' ? '👑' : '🐇';
-            const name = msg.sender === 'eagle' ? 'Águila' : 'Conejo';
-            senderSpan.innerHTML = icon + ' ' + name;
-
-            const textSpan = document.createElement('div');
-            textSpan.className = 'msg-text';
-            textSpan.innerText = msg.text || '';
-
-            if (msg.file_url) {
-                const fileType = getFileType(msg.file_name || 'archivo');
-                const fileIcon = getFileIcon(fileType);
-                
-                if (fileType === 'image') {
-                    const img = document.createElement('img');
-                    img.className = 'file-attachment image';
-                    img.src = msg.file_url;
-                    img.alt = msg.file_name || 'Imagen adjunta';
-                    img.loading = 'lazy';
-                    img.onclick = () => openFileModal(msg.file_url, msg.file_name, fileType);
-                    textSpan.appendChild(img);
-                } else if (fileType === 'video') {
-                    const video = document.createElement('video');
-                    video.className = 'file-attachment video';
-                    video.src = msg.file_url;
-                    video.controls = true;
-                    video.preload = 'metadata';
-                    video.onclick = () => openFileModal(msg.file_url, msg.file_name, fileType);
-                    textSpan.appendChild(video);
-                } else if (fileType === 'audio') {
-                    const audio = document.createElement('audio');
-                    audio.className = 'file-attachment audio';
-                    audio.src = msg.file_url;
-                    audio.controls = true;
-                    audio.preload = 'metadata';
-                    audio.onclick = () => openFileModal(msg.file_url, msg.file_name, fileType);
-                    textSpan.appendChild(audio);
-                    
-                    // Añadir nombre del audio
-                    const audioName = document.createElement('div');
-                    audioName.style.cssText = 'font-size:.8rem;color:#8b9ba8;margin-top:4px';
-                    audioName.textContent = '🎵 ' + (msg.file_name || 'Audio');
-                    textSpan.appendChild(audioName);
-                } else {
-                    const fileDiv = document.createElement('div');
-                    fileDiv.className = 'file-attachment document';
-                    fileDiv.style.cssText = 'display:flex;align-items:center;gap:12px;background:#1e2a36;padding:10px 16px;border-radius:8px;cursor:pointer;';
-                    fileDiv.onclick = () => openFileModal(msg.file_url, msg.file_name, fileType);
-                    
-                    const iconEl = document.createElement('i');
-                    iconEl.className = 'fas ' + fileIcon;
-                    iconEl.style.cssText = 'font-size:1.5rem;color:#4f8cc9';
-                    
-                    const infoDiv = document.createElement('div');
-                    infoDiv.style.cssText = 'flex:1;min-width:0';
-                    const nameSpan = document.createElement('div');
-                    nameSpan.style.cssText = 'font-weight:500;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
-                    nameSpan.textContent = getFileIconText(msg.file_name) + ' ' + (msg.file_name || 'Archivo adjunto');
-                    const sizeSpan = document.createElement('div');
-                    sizeSpan.style.cssText = 'font-size:.7rem;opacity:.7';
-                    sizeSpan.textContent = getFileSize(msg.file_size || 0);
-                    
-                    infoDiv.appendChild(nameSpan);
-                    infoDiv.appendChild(sizeSpan);
-                    fileDiv.appendChild(iconEl);
-                    fileDiv.appendChild(infoDiv);
-                    
-                    const downloadBtn = document.createElement('button');
-                    downloadBtn.innerHTML = '<i class="fas fa-download"></i>';
-                    downloadBtn.style.cssText = 'background:transparent;border:none;color:#a0b8c9;cursor:pointer;font-size:1rem;padding:4px 8px;border-radius:4px;transition:.15s';
-                    downloadBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        window.open(msg.file_url, '_blank');
-                    };
-                    downloadBtn.onmouseover = () => downloadBtn.style.background = '#2f4050';
-                    downloadBtn.onmouseout = () => downloadBtn.style.background = 'transparent';
-                    fileDiv.appendChild(downloadBtn);
-                    
-                    textSpan.appendChild(fileDiv);
-                }
-            }
-
-            const timeSpan = document.createElement('div');
-            timeSpan.className = 'msg-time';
-            
-            const timeText = document.createElement('span');
-            timeText.textContent = formatFullDate(msg.created_at);
-            timeSpan.appendChild(timeText);
-            
-            if (msg.sender === currentUser) {
-                const readStatus = document.createElement('span');
-                readStatus.className = 'read-status';
-                if (msg.is_read) {
-                    readStatus.textContent = '✓✓ Leído';
-                    readStatus.classList.add('read');
-                } else {
-                    readStatus.textContent = '✓ Enviado';
-                    readStatus.classList.add('unread');
-                }
-                timeSpan.appendChild(readStatus);
-            }
-
-            div.appendChild(senderSpan);
-            div.appendChild(textSpan);
-            div.appendChild(timeSpan);
-
-            if (currentUser === 'eagle') {
-                const actions = document.createElement('div');
-                actions.className = 'message-actions';
-                const delBtn = document.createElement('button');
-                delBtn.innerHTML = '<i class="fas fa-trash"></i>';
-                delBtn.title = 'Eliminar este mensaje';
-                delBtn.onclick = (e) => { e.stopPropagation(); deleteSingleMessage(msg.id); };
-                actions.appendChild(delBtn);
-                div.appendChild(actions);
-            }
-            chatMessages.appendChild(div);
-        });
+        chatMessages.appendChild(scrollDownBtn);
         
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        if (shouldScrollToBottom) {
+            scrollToBottom();
+        } else {
+            updateScrollButton();
+        }
+        
         updateUnreadBadges();
     }
 
@@ -742,6 +917,11 @@
                             showToast(`📩 Nuevo mensaje de ${senderName}: ${preview.substring(0, 30)}`, 'notification', 3000);
                             lastNotificationTime = now;
                         }
+                        
+                        if (!isNearBottom()) {
+                            newMessagesSinceLastView += newMessages.length;
+                            updateUnreadBadges();
+                        }
                     }
                 }
             }
@@ -749,7 +929,7 @@
             renderMessages();
             updateStatus('✅ Conectado', true);
             
-            if (isChatOpen && currentUser) {
+            if (isChatOpen && currentUser && isNearBottom()) {
                 setTimeout(() => markMessagesAsRead(), 1000);
             }
         } catch (error) {
@@ -763,12 +943,10 @@
             const fileName = Date.now() + '-' + Math.random().toString(36).substring(7) + '.' + fileExt;
             const filePath = 'uploads/' + fileName;
             
-            // Mostrar progreso
             uploadProgress.classList.add('active');
             uploadStatus.textContent = `Subiendo ${file.name}...`;
             progressFill.style.width = '0%';
             
-            // Subir archivo con progreso
             const { error: uploadError } = await supabase.storage
                 .from(BUCKET_NAME)
                 .upload(filePath, file, {
@@ -901,7 +1079,6 @@
                 showToast('✅ Mensaje enviado', 'success', 1000);
             }
             
-            // Limpiar archivos seleccionados
             showSelectedFiles(null);
             fileInput.value = '';
             
@@ -964,7 +1141,7 @@
                         }
                     }
                     
-                    if (isChatOpen && currentUser) {
+                    if (isChatOpen && currentUser && isNearBottom()) {
                         setTimeout(() => markMessagesAsRead(), 1500);
                     }
                 }
@@ -1124,7 +1301,6 @@
     async function handleFileUpload(files) {
         if (!files || files.length === 0) return;
         showSelectedFiles(files);
-        // Enviar automáticamente si solo hay archivos y no texto
         const text = messageInput.value;
         if (!text.trim() && files.length > 0) {
             await sendMessage('', files);
@@ -1182,13 +1358,15 @@
     fileModal.onclick = (e) => { if (e.target === fileModal) fileModal.classList.remove('active'); };
     
     chatMessages.addEventListener('scroll', () => {
-        if (isChatOpen && currentUser) {
+        updateScrollButton();
+        
+        if (isChatOpen && currentUser && isNearBottom()) {
             markMessagesAsRead();
         }
     });
     
     chatMessages.addEventListener('click', () => {
-        if (isChatOpen && currentUser) {
+        if (isChatOpen && currentUser && isNearBottom()) {
             markMessagesAsRead();
         }
     });
@@ -1201,6 +1379,9 @@
     updateStatus('⚪ Desconectado', false);
     updateUserStatus();
     unreadInfo.textContent = '📬 0 no leídos';
+    
+    // Inicializar el botón arrastrable
+    initDragButton();
     
     startNotificationCheck();
     
