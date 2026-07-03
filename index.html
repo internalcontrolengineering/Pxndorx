@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Clon · Águila & Conejo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui,sans-serif}
+        body{background:#0e1621;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px}
+        .login-container{background:#17212b;border-radius:28px;padding:40px 30px;max-width:500px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,0.6);text-align:center}
+        .login-container h1{color:#e8edf0;font-weight:400;font-size:1.8rem;letter-spacing:1px;margin-bottom:10px}
+        .login-container p{color:#8b9ba8;margin-bottom:30px;font-size:.95rem}
+        .user-cards{display:flex;justify-content:center;gap:25px;flex-wrap:wrap}
+        .user-card{background:#242f3d;border-radius:20px;padding:25px 20px;width:140px;cursor:pointer;transition:all .2s ease;border:2px solid transparent;box-shadow:0 6px 12px rgba(0,0,0,0.3);position:relative}
+        .user-card:hover{transform:scale(1.03);border-color:#4f8cc9;background:#2b3a4a}
+        .user-card i{font-size:4rem;color:#e8edf0;margin-bottom:12px;display:block}
+        .user-card .fa-crown{color:#f5b342}
+        .user-card .fa-paw{color:#a8c8e0}
+        .user-card span{display:block;color:#e8edf0;font-weight:500;font-size:1.1rem}
+        .user-card small{color:#7b8b9a;font-size:.75rem}
+        .user-card .unread-badge{position:absolute;top:10px;right:10px;background:#e06b6b;color:#fff;border-radius:50%;padding:4px 8px;font-size:.7rem;font-weight:bold;min-width:20px;text-align:center;display:none;animation:pulse-badge 1s ease infinite}
+        .user-card .last-message-preview{font-size:.7rem;color:#8b9ba8;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px}
+        .user-card .notification-dot{position:absolute;top:5px;right:5px;width:12px;height:12px;background:#4f8cc9;border-radius:50%;display:none;animation:pulse-dot 1.5s ease infinite}
+        @keyframes pulse-badge{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+        @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.3}}
+        .password-box{margin-top:30px;display:none;flex-direction:column;align-items:center;gap:12px}
+        .password-box.active{display:flex}
+        .password-box input{background:#1f2c38;border:none;padding:14px 18px;border-radius:30px;width:100%;max-width:220px;color:#e8edf0;font-size:1rem;outline:2px solid #2f4050;transition:.2s}
+        .password-box input:focus{outline-color:#4f8cc9}
+        .password-box .error-msg{color:#e06b6b;font-size:.85rem;min-height:20px}
+        .password-box button{background:#4f8cc9;border:none;padding:10px 30px;border-radius:30px;color:#fff;font-weight:600;font-size:1rem;cursor:pointer;transition:.15s;width:100%;max-width:180px}
+        .password-box button:hover{background:#3a75b0}
+        .chat-container{display:none;flex-direction:column;background:#17212b;border-radius:28px;width:100%;max-width:800px;height:650px;box-shadow:0 20px 40px rgba(0,0,0,0.6);overflow:hidden}
+        .chat-container.active{display:flex}
+        .chat-header{background:#1e2a36;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #2f4050}
+        .chat-header .user-info{display:flex;align-items:center;gap:12px}
+        .chat-header .user-info i{font-size:2.2rem}
+        .chat-header .user-info .fa-crown{color:#f5b342}
+        .chat-header .user-info .fa-paw{color:#a8c8e0}
+        .chat-header .user-info .username{color:#e8edf0;font-weight:500;font-size:1.2rem}
+        .chat-header .actions{display:flex;gap:15px;align-items:center}
+        .chat-header .actions button{background:transparent;border:none;color:#a0b8c9;font-size:1.2rem;cursor:pointer;transition:.15s;padding:6px 8px;border-radius:30px;position:relative}
+        .chat-header .actions button:hover{color:#e8edf0;background:#2f4050}
+        .chat-header .actions .delete-history{color:#d47c7c}
+        .chat-header .actions .delete-history:hover{color:#f59898;background:#3e2a2a}
+        .chat-messages{flex:1;padding:20px 18px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;background:#0e1621}
+        .message{max-width:80%;padding:10px 16px;border-radius:18px;font-size:.95rem;word-break:break-word;background:#1f2c38;color:#e8edf0;align-self:flex-start;border-bottom-left-radius:6px;position:relative;transition:all .2s ease}
+        .message.unread{background:#2a3a4a;border-left:3px solid #4f8cc9}
+        .message:hover .message-actions{opacity:1}
+        .message.own{align-self:flex-end;background:#2b5277;border-bottom-right-radius:6px;border-bottom-left-radius:18px}
+        .message.own.unread{background:#1a4a6a;border-right:3px solid #4f8cc9}
+        .message .msg-sender{font-size:.7rem;opacity:.7;margin-bottom:4px;display:flex;align-items:center;gap:4px}
+        .message .msg-text{margin-bottom:4px}
+        .message .msg-time{font-size:.6rem;opacity:.5;text-align:right;display:flex;justify-content:space-between;align-items:center;gap:8px}
+        .message .msg-time .read-status{font-size:.5rem}
+        .message .msg-time .read-status.read{color:#4caf50}
+        .message .msg-time .read-status.unread{color:#8b9ba8}
+        .message .message-actions{position:absolute;top:-15px;right:-10px;opacity:0;transition:opacity .2s ease;display:flex;gap:5px;background:#1e2a36;padding:2px 8px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
+        .message .message-actions button{background:transparent;border:none;color:#a0b8c9;cursor:pointer;font-size:.8rem;padding:2px 4px;border-radius:4px;transition:.15s}
+        .message .message-actions button:hover{color:#f59898;background:#2f4050}
+        .message .file-attachment{max-width:100%;border-radius:12px;margin-top:4px;cursor:pointer;object-fit:contain}
+        .message .file-attachment.video{max-height:300px}
+        .message .file-attachment.image{max-height:300px}
+        .message .file-attachment.audio{width:100%;height:40px}
+        .message .file-attachment.document{max-height:150px;object-fit:cover;background:#1e2a36;padding:10px}
+        .chat-input{background:#1e2a36;padding:14px 20px;display:flex;gap:12px;border-top:1px solid #2f4050;align-items:center}
+        .chat-input input[type="text"]{flex:1;background:#0e1621;border:none;border-radius:30px;padding:12px 20px;color:#e8edf0;font-size:.95rem;outline:2px solid #2f4050;transition:.15s}
+        .chat-input input[type="text"]:focus{outline-color:#4f8cc9}
+        .chat-input input[type="text"]:disabled{opacity:.5;cursor:not-allowed}
+        .chat-input .file-input-wrapper{position:relative;display:inline-block}
+        .chat-input .file-input-wrapper input[type="file"]{position:absolute;left:0;top:0;opacity:0;width:100%;height:100%;cursor:pointer}
+        .chat-input button{background:#4f8cc9;border:none;width:50px;height:50px;border-radius:50%;color:#fff;font-size:1.2rem;cursor:pointer;transition:.15s;flex-shrink:0}
+        .chat-input button:hover{background:#3a75b0}
+        .chat-input button:disabled{opacity:.4;cursor:not-allowed}
+        .chat-input .attach-btn{background:#2f4050;width:44px;height:44px;font-size:1rem}
+        .chat-input .attach-btn:hover{background:#3a75b0}
+        .chat-input .file-info{display:flex;align-items:center;gap:8px;background:#0e1621;padding:6px 12px;border-radius:20px;max-width:200px}
+        .chat-input .file-info .file-name{color:#8b9ba8;font-size:.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .chat-input .file-info .file-size{color:#6b7f8f;font-size:.65rem}
+        .chat-input .file-info .remove-file{color:#e06b6b;cursor:pointer;padding:0 4px}
+        .chat-input .file-info .remove-file:hover{color:#f59898}
+        @media(max-width:550px){.user-cards{gap:12px}.user-card{width:120px;padding:18px 12px}.login-container{padding:30px 15px}.chat-container{height:500px}}
+        .debug-info{background:#1e2a36;color:#8b9ba8;font-size:.7rem;padding:8px 20px;border-top:1px solid #2f4050;display:flex;justify-content:space-between}
+        .debug-info .unread-count{color:#e06b6b;font-weight:bold}
+        .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);justify-content:center;align-items:center;z-index:1000}
+        .modal.active{display:flex}
+        .modal img{max-width:90%;max-height:90%;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.8);object-fit:contain}
+        .modal video{max-width:90%;max-height:90%;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.8)}
+        .modal audio{width:80%;max-width:500px}
+        .modal .close-modal{position:absolute;top:20px;right:20px;color:#fff;font-size:2rem;cursor:pointer;background:rgba(0,0,0,0.5);padding:10px 15px;border-radius:50%;border:none;transition:.2s}
+        .modal .close-modal:hover{background:rgba(255,0,0,0.6)}
+        .modal .modal-content{display:flex;flex-direction:column;align-items:center;gap:20px;max-width:90%;max-height:90%}
+        .modal .file-info{color:#e8edf0;font-size:.9rem;background:rgba(0,0,0,0.5);padding:10px 20px;border-radius:8px}
+        .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e2a36;color:#e8edf0;padding:12px 24px;border-radius:12px;font-size:.9rem;box-shadow:0 4px 12px rgba(0,0,0,0.5);display:none;z-index:2000;max-width:90%;text-align:center;border-left:4px solid #4f8cc9}
+        .toast.error{border-left-color:#e06b6b}
+        .toast.success{border-left-color:#4caf50}
+        .toast.notification{border-left-color:#f5b342}
+        .toast.show{display:block;animation:slideUp .3s ease}
+        @keyframes slideUp{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+        .typing-indicator{display:none;padding:8px 16px;color:#8b9ba8;font-size:.85rem;font-style:italic;background:#1e2a36;border-radius:12px;align-self:flex-start;margin-bottom:4px}
+        .typing-indicator.active{display:block}
+        .typing-indicator .dots::after{content:'...';animation:dots 1.5s steps(4) infinite}
+        @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}}
+        .upload-progress{display:none;padding:8px 16px;background:#1e2a36;border-radius:12px;color:#8b9ba8;font-size:.85rem}
+        .upload-progress.active{display:block}
+        .upload-progress .progress-bar{width:100%;height:4px;background:#2f4050;border-radius:2px;margin-top:4px;overflow:hidden}
+        .upload-progress .progress-bar .progress-fill{height:100%;background:#4f8cc9;width:0%;transition:width .3s ease}
+    </style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<div id="loginScreen" class="login-container">
+    <h1><i class="fas fa-paper-plane" style="color:#4f8cc9;margin-right:8px"></i>Telegram</h1>
+    <p>selecciona tu perfil</p>
+    <div class="user-cards">
+        <div class="user-card" id="cardEagle">
+            <i class="fas fa-crown"></i>
+            <span>Águila</span>
+            <small>admin</small>
+            <div class="notification-dot" id="eagleDot"></div>
+            <div class="unread-badge" id="eagleUnread">0</div>
+            <div class="last-message-preview" id="eaglePreview">Sin mensajes</div>
+        </div>
+        <div class="user-card" id="cardRabbit">
+            <i class="fas fa-paw"></i>
+            <span>Conejo</span>
+            <small>usuario</small>
+            <div class="notification-dot" id="rabbitDot"></div>
+            <div class="unread-badge" id="rabbitUnread">0</div>
+            <div class="last-message-preview" id="rabbitPreview">Sin mensajes</div>
+        </div>
+    </div>
+    <div id="passwordBox" class="password-box">
+        <input type="password" id="passwordInput" placeholder="Contraseña" autocomplete="off">
+        <div class="error-msg" id="passError"></div>
+        <button id="unlockBtn">Acceder</button>
+    </div>
+</div>
+
+<div id="chatScreen" class="chat-container">
+    <div class="chat-header">
+        <div class="user-info">
+            <i id="headerIcon" class="fas fa-crown"></i>
+            <span class="username" id="headerUsername">Águila</span>
+        </div>
+        <div class="actions">
+            <button id="deleteAllBtn" class="delete-history" title="Borrar toda la conversación (solo Águila)">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+            <button id="logoutBtn" title="Cerrar sesión">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="upload-progress" id="uploadProgress">
+        <span id="uploadStatus">Subiendo archivo...</span>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+    </div>
+    <div class="typing-indicator" id="typingIndicator">
+        <span>Alguien está escribiendo<span class="dots"></span></span>
+    </div>
+    <div class="chat-input">
+        <div class="file-input-wrapper">
+            <button class="attach-btn" id="attachBtn">
+                <i class="fas fa-paperclip"></i>
+            </button>
+            <input type="file" id="fileInput" multiple>
+        </div>
+        <div id="fileInfoContainer" class="file-info" style="display:none">
+            <span class="file-name" id="selectedFileName">archivo.pdf</span>
+            <span class="file-size" id="selectedFileSize">0 KB</span>
+            <span class="remove-file" id="removeFileBtn"><i class="fas fa-times"></i></span>
+        </div>
+        <input type="text" id="messageInput" placeholder="Escribe un mensaje..." disabled>
+        <button id="sendBtn" disabled><i class="fas fa-paper-plane"></i></button>
+    </div>
+    <div class="debug-info">
+        <span id="statusText">⚪ Desconectado</span>
+        <span id="userStatus">Usuario: Ninguno</span>
+        <span id="unreadInfo" class="unread-count">📬 0 no leídos</span>
+    </div>
+</div>
+
+<div class="modal" id="fileModal">
+    <button class="close-modal" id="closeModal"><i class="fas fa-times"></i></button>
+    <div class="modal-content" id="modalContent">
+        <div id="modalPreview"></div>
+        <div class="file-info" id="fileInfo"></div>
+    </div>
+</div>
+
+<script>
+(function() {
+    const SUPABASE_URL = 'https://oqvejtpkeqdlmixmevcr.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9xdmVqdHBrZXFkbG1peG1ldmNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMwMzI0MTcsImV4cCI6MjA5ODYwODQxN30.B65e2o11lIA8i0tq8Jz4r8ZdE_eLj_g9h4XxPHzSAh0';
+
+    const BUCKET_NAME = 'chat-images';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = null;
+    let messages = [];
+    let channel = null;
+    let bucketReady = false;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 5;
+    let notificationCheckInterval = null;
+    let isChatOpen = false;
+    let selectedFiles = [];
+
+    // DOM refs
+    const loginScreen = document.getElementById('loginScreen');
+    const chatScreen = document.getElementById('chatScreen');
+    const cardEagle = document.getElementById('cardEagle');
+    const cardRabbit = document.getElementById('cardRabbit');
+    const eagleUnread = document.getElementById('eagleUnread');
+    const rabbitUnread = document.getElementById('rabbitUnread');
+    const eaglePreview = document.getElementById('eaglePreview');
+    const rabbitPreview = document.getElementById('rabbitPreview');
+    const eagleDot = document.getElementById('eagleDot');
+    const rabbitDot = document.getElementById('rabbitDot');
+    const passwordBox = document.getElementById('passwordBox');
+    const passwordInput = document.getElementById('passwordInput');
+    const passError = document.getElementById('passError');
+    const unlockBtn = document.getElementById('unlockBtn');
+    const chatMessages = document.getElementById('chatMessages');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const headerIcon = document.getElementById('headerIcon');
+    const headerUsername = document.getElementById('headerUsername');
+    const deleteAllBtn = document.getElementById('deleteAllBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const statusText = document.getElementById('statusText');
+    const userStatus = document.getElementById('userStatus');
+    const unreadInfo = document.getElementById('unreadInfo');
+    const fileInput = document.getElementById('fileInput');
+    const attachBtn = document.getElementById('attachBtn');
+    const fileModal = document.getElementById('fileModal');
+    const modalPreview = document.getElementById('modalPreview');
+    const fileInfo = document.getElementById('fileInfo');
+    const closeModal = document.getElementById('closeModal');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const toast = document.getElementById('toast');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const progressFill = document.getElementById('progressFill');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const fileInfoContainer = document.getElementById('fileInfoContainer');
+    const selectedFileName = document.getElementById('selectedFileName');
+    const selectedFileSize = document.getElementById('selectedFileSize');
+    const removeFileBtn = document.getElementById('removeFileBtn');
+    let toastTimeout = null;
+    let lastNotificationTime = 0;
+
+    function showToast(msg, type = 'info', duration = 3000) {
+        toast.textContent = msg;
+        toast.className = 'toast ' + type;
+        toast.classList.add('show');
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => toast.classList.remove('show'), duration);
+    }
+
+    function playNotificationSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.2);
+            
+            setTimeout(() => {
+                const osc2 = audioCtx.createOscillator();
+                const gain2 = audioCtx.createGain();
+                osc2.connect(gain2);
+                gain2.connect(audioCtx.destination);
+                osc2.frequency.value = 1000;
+                osc2.type = 'sine';
+                gain2.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc2.start();
+                osc2.stop(audioCtx.currentTime + 0.15);
+            }, 150);
+        } catch(e) {
+            console.log('Sonido no disponible');
+        }
+    }
+
+    function updateUnreadBadges() {
+        const eagleUnreadCount = messages.filter(m => m.sender !== 'eagle' && !m.is_read).length;
+        const rabbitUnreadCount = messages.filter(m => m.sender !== 'rabbit' && !m.is_read).length;
+        
+        eagleUnread.textContent = eagleUnreadCount > 0 ? eagleUnreadCount : '';
+        eagleUnread.style.display = eagleUnreadCount > 0 ? 'block' : 'none';
+        eagleDot.style.display = eagleUnreadCount > 0 ? 'block' : 'none';
+        
+        rabbitUnread.textContent = rabbitUnreadCount > 0 ? rabbitUnreadCount : '';
+        rabbitUnread.style.display = rabbitUnreadCount > 0 ? 'block' : 'none';
+        rabbitDot.style.display = rabbitUnreadCount > 0 ? 'block' : 'none';
+        
+        if (messages.length > 0) {
+            const lastMsg = messages[messages.length - 1];
+            const previewText = lastMsg.text || (lastMsg.file_name ? getFileIconText(lastMsg.file_name) + ' ' + lastMsg.file_name : '');
+            const sender = lastMsg.sender === 'eagle' ? '🦅' : '🐇';
+            const time = formatTime(lastMsg.created_at);
+            
+            const preview = sender + ' ' + (previewText.substring(0, 25) || 'Archivo adjunto') + ' · ' + time;
+            
+            if (lastMsg.sender === 'eagle') {
+                eaglePreview.textContent = preview;
+            } else {
+                rabbitPreview.textContent = preview;
+            }
+        }
+        
+        const totalUnread = messages.filter(m => !m.is_read).length;
+        unreadInfo.textContent = `📬 ${totalUnread} no leídos`;
+        
+        if (totalUnread > 0) {
+            document.title = `(${totalUnread}) Telegram Clon`;
+        } else {
+            document.title = 'Telegram Clon';
+        }
+    }
+
+    function getFileIconText(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+        const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'];
+        const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac'];
+        const docExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'json', 'xml'];
+        const codeExts = ['js', 'py', 'java', 'cpp', 'c', 'html', 'css', 'php', 'rb', 'go', 'rs'];
+
+        if (imageExts.includes(ext)) return '🖼️';
+        if (videoExts.includes(ext)) return '🎬';
+        if (audioExts.includes(ext)) return '🎵';
+        if (docExts.includes(ext)) return '📄';
+        if (codeExts.includes(ext)) return '💻';
+        return '📎';
+    }
+
+    function getFileType(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
+        const videoExts = ['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv'];
+        const audioExts = ['mp3', 'wav', 'ogg', 'aac', 'flac'];
+        const docExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv', 'json', 'xml'];
+
+        if (imageExts.includes(ext)) return 'image';
+        if (videoExts.includes(ext)) return 'video';
+        if (audioExts.includes(ext)) return 'audio';
+        if (docExts.includes(ext)) return 'document';
+        return 'other';
+    }
+
+    function getFileIcon(fileType) {
+        const icons = {
+            'image': 'fa-image',
+            'video': 'fa-video',
+            'audio': 'fa-music',
+            'document': 'fa-file-alt',
+            'other': 'fa-file'
+        };
+        return icons[fileType] || 'fa-file';
+    }
+
+    function getFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        if (bytes < 1073741824) return (bytes / 1048576).toFixed(1) + ' MB';
+        return (bytes / 1073741824).toFixed(1) + ' GB';
+    }
+
+    function getMimeType(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const mimeTypes = {
+            'jpg': 'image/jpeg',
+            'jpeg': 'image/jpeg',
+            'png': 'image/png',
+            'gif': 'image/gif',
+            'bmp': 'image/bmp',
+            'webp': 'image/webp',
+            'svg': 'image/svg+xml',
+            'mp4': 'video/mp4',
+            'webm': 'video/webm',
+            'ogg': 'video/ogg',
+            'mov': 'video/quicktime',
+            'avi': 'video/x-msvideo',
+            'mkv': 'video/x-matroska',
+            'mp3': 'audio/mpeg',
+            'wav': 'audio/wav',
+            'aac': 'audio/aac',
+            'flac': 'audio/flac',
+            'pdf': 'application/pdf',
+            'doc': 'application/msword',
+            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'xls': 'application/vnd.ms-excel',
+            'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'ppt': 'application/vnd.ms-powerpoint',
+            'pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'txt': 'text/plain',
+            'csv': 'text/csv',
+            'json': 'application/json',
+            'xml': 'application/xml',
+            'zip': 'application/zip',
+            'rar': 'application/x-rar-compressed',
+            '7z': 'application/x-7z-compressed'
+        };
+        return mimeTypes[ext] || 'application/octet-stream';
+    }
+
+    async function ensureBucketExists() {
+        try {
+            const { data: buckets, error } = await supabase.storage.listBuckets();
+            if (error) { console.warn('Error listando buckets:', error); return false; }
+            const exists = buckets.some(b => b.name === BUCKET_NAME);
+            if (!exists) {
+                showToast('❌ Bucket "' + BUCKET_NAME + '" no encontrado', 'error', 5000);
+                return false;
+            }
+            return true;
+        } catch (error) {
+            console.error('Error en ensureBucketExists:', error);
+            return false;
+        }
+    }
+
+    async function markMessagesAsRead() {
+        if (!currentUser || !isChatOpen) return;
+        
+        const unreadMessages = messages.filter(m => m.sender !== currentUser && !m.is_read);
+        if (unreadMessages.length === 0) return;
+        
+        try {
+            const ids = unreadMessages.map(m => m.id);
+            const { error } = await supabase
+                .from('messages')
+                .update({ is_read: true, read_at: new Date().toISOString() })
+                .in('id', ids);
+                
+            if (!error) {
+                unreadMessages.forEach(m => {
+                    m.is_read = true;
+                    m.read_at = new Date().toISOString();
+                });
+                renderMessages();
+                updateUnreadBadges();
+            }
+        } catch (error) {
+            console.error('Error marcando mensajes como leídos:', error);
+        }
+    }
+
+    function formatFullDate(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        const hoy = new Date();
+        const ayer = new Date(hoy);
+        ayer.setDate(ayer.getDate() - 1);
+        
+        const options = { hour: '2-digit', minute: '2-digit' };
+        
+        if (d.toDateString() === hoy.toDateString()) {
+            return 'Hoy ' + d.toLocaleTimeString([], options);
+        } else if (d.toDateString() === ayer.toDateString()) {
+            return 'Ayer ' + d.toLocaleTimeString([], options);
+        } else {
+            return d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) + 
+                   ' ' + d.toLocaleTimeString([], options);
+        }
+    }
+
+    function formatTime(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderMessages() {
+        chatMessages.innerHTML = '';
+        if (!messages.length) {
+            const empty = document.createElement('div');
+            empty.style.cssText = 'color:#6b7f8f;text-align:center;margin-top:40px;font-size:.9rem';
+            empty.innerText = 'No hay mensajes aún';
+            chatMessages.appendChild(empty);
+            return;
+        }
+        
+        messages.forEach(msg => {
+            const div = document.createElement('div');
+            div.className = 'message';
+            if (msg.sender === currentUser) div.classList.add('own');
+            
+            if (msg.sender !== currentUser && !msg.is_read && isChatOpen) {
+                div.classList.add('unread');
+            }
+            
+            div.dataset.messageId = msg.id;
+
+            const senderSpan = document.createElement('div');
+            senderSpan.className = 'msg-sender';
+            const icon = msg.sender === 'eagle' ? '👑' : '🐇';
+            const name = msg.sender === 'eagle' ? 'Águila' : 'Conejo';
+            senderSpan.innerHTML = icon + ' ' + name;
+
+            const textSpan = document.createElement('div');
+            textSpan.className = 'msg-text';
+            textSpan.innerText = msg.text || '';
+
+            if (msg.file_url) {
+                const fileType = getFileType(msg.file_name || 'archivo');
+                const fileIcon = getFileIcon(fileType);
+                
+                if (fileType === 'image') {
+                    const img = document.createElement('img');
+                    img.className = 'file-attachment image';
+                    img.src = msg.file_url;
+                    img.alt = msg.file_name || 'Imagen adjunta';
+                    img.loading = 'lazy';
+                    img.onclick = () => openFileModal(msg.file_url, msg.file_name, fileType);
+                    textSpan.appendChild(img);
+                } else if (fileType === 'video') {
+                    const video = document.createElement('video');
+                    video.className = 'file-attachment video';
+                    video.src = msg.file_url;
+                    video.controls = true;
+                    video.preload = 'metadata';
+                    video.onclick = () => openFileModal(msg.file_url, msg.file_name, fileType);
+                    textSpan.appendChild(video);
+                } else if (fileType === 'audio') {
+                    const audio = document.createElement('audio');
+                    audio.className = 'file-attachment audio';
+                    audio.src = msg.file_url;
+                    audio.controls = true;
+                    audio.preload = 'metadata';
+                    audio.onclick = () => openFileModal(msg.file_url, msg.file_name, fileType);
+                    textSpan.appendChild(audio);
+                    
+                    // Añadir nombre del audio
+                    const audioName = document.createElement('div');
+                    audioName.style.cssText = 'font-size:.8rem;color:#8b9ba8;margin-top:4px';
+                    audioName.textContent = '🎵 ' + (msg.file_name || 'Audio');
+                    textSpan.appendChild(audioName);
+                } else {
+                    const fileDiv = document.createElement('div');
+                    fileDiv.className = 'file-attachment document';
+                    fileDiv.style.cssText = 'display:flex;align-items:center;gap:12px;background:#1e2a36;padding:10px 16px;border-radius:8px;cursor:pointer;';
+                    fileDiv.onclick = () => openFileModal(msg.file_url, msg.file_name, fileType);
+                    
+                    const iconEl = document.createElement('i');
+                    iconEl.className = 'fas ' + fileIcon;
+                    iconEl.style.cssText = 'font-size:1.5rem;color:#4f8cc9';
+                    
+                    const infoDiv = document.createElement('div');
+                    infoDiv.style.cssText = 'flex:1;min-width:0';
+                    const nameSpan = document.createElement('div');
+                    nameSpan.style.cssText = 'font-weight:500;font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis';
+                    nameSpan.textContent = getFileIconText(msg.file_name) + ' ' + (msg.file_name || 'Archivo adjunto');
+                    const sizeSpan = document.createElement('div');
+                    sizeSpan.style.cssText = 'font-size:.7rem;opacity:.7';
+                    sizeSpan.textContent = getFileSize(msg.file_size || 0);
+                    
+                    infoDiv.appendChild(nameSpan);
+                    infoDiv.appendChild(sizeSpan);
+                    fileDiv.appendChild(iconEl);
+                    fileDiv.appendChild(infoDiv);
+                    
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.innerHTML = '<i class="fas fa-download"></i>';
+                    downloadBtn.style.cssText = 'background:transparent;border:none;color:#a0b8c9;cursor:pointer;font-size:1rem;padding:4px 8px;border-radius:4px;transition:.15s';
+                    downloadBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        window.open(msg.file_url, '_blank');
+                    };
+                    downloadBtn.onmouseover = () => downloadBtn.style.background = '#2f4050';
+                    downloadBtn.onmouseout = () => downloadBtn.style.background = 'transparent';
+                    fileDiv.appendChild(downloadBtn);
+                    
+                    textSpan.appendChild(fileDiv);
+                }
+            }
+
+            const timeSpan = document.createElement('div');
+            timeSpan.className = 'msg-time';
+            
+            const timeText = document.createElement('span');
+            timeText.textContent = formatFullDate(msg.created_at);
+            timeSpan.appendChild(timeText);
+            
+            if (msg.sender === currentUser) {
+                const readStatus = document.createElement('span');
+                readStatus.className = 'read-status';
+                if (msg.is_read) {
+                    readStatus.textContent = '✓✓ Leído';
+                    readStatus.classList.add('read');
+                } else {
+                    readStatus.textContent = '✓ Enviado';
+                    readStatus.classList.add('unread');
+                }
+                timeSpan.appendChild(readStatus);
+            }
+
+            div.appendChild(senderSpan);
+            div.appendChild(textSpan);
+            div.appendChild(timeSpan);
+
+            if (currentUser === 'eagle') {
+                const actions = document.createElement('div');
+                actions.className = 'message-actions';
+                const delBtn = document.createElement('button');
+                delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                delBtn.title = 'Eliminar este mensaje';
+                delBtn.onclick = (e) => { e.stopPropagation(); deleteSingleMessage(msg.id); };
+                actions.appendChild(delBtn);
+                div.appendChild(actions);
+            }
+            chatMessages.appendChild(div);
+        });
+        
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        updateUnreadBadges();
+    }
+
+    function openFileModal(url, name, type) {
+        const modalContent = document.getElementById('modalContent');
+        const preview = document.getElementById('modalPreview');
+        const info = document.getElementById('fileInfo');
+        
+        preview.innerHTML = '';
+        
+        if (type === 'image') {
+            const img = document.createElement('img');
+            img.src = url;
+            img.style.maxWidth = '100%';
+            img.style.maxHeight = '80vh';
+            preview.appendChild(img);
+        } else if (type === 'video') {
+            const video = document.createElement('video');
+            video.src = url;
+            video.controls = true;
+            video.style.maxWidth = '100%';
+            video.style.maxHeight = '80vh';
+            video.autoplay = false;
+            preview.appendChild(video);
+        } else if (type === 'audio') {
+            const audio = document.createElement('audio');
+            audio.src = url;
+            audio.controls = true;
+            audio.style.width = '80%';
+            audio.style.maxWidth = '500px';
+            preview.appendChild(audio);
+            
+            const nameDiv = document.createElement('div');
+            nameDiv.style.cssText = 'color:#e8edf0;font-size:1rem';
+            nameDiv.textContent = '🎵 ' + (name || 'Audio');
+            preview.appendChild(nameDiv);
+        } else {
+            const div = document.createElement('div');
+            div.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:20px;padding:20px';
+            const icon = document.createElement('i');
+            icon.className = 'fas ' + getFileIcon(type);
+            icon.style.cssText = 'font-size:4rem;color:#4f8cc9';
+            const p = document.createElement('p');
+            p.textContent = getFileIconText(name) + ' ' + (name || 'Archivo adjunto');
+            p.style.color = '#e8edf0';
+            const downloadBtn = document.createElement('button');
+            downloadBtn.textContent = '📥 Descargar archivo';
+            downloadBtn.style.cssText = 'background:#4f8cc9;border:none;padding:10px 30px;border-radius:30px;color:#fff;font-weight:600;font-size:1rem;cursor:pointer;transition:.15s';
+            downloadBtn.onclick = () => window.open(url, '_blank');
+            downloadBtn.onmouseover = () => downloadBtn.style.background = '#3a75b0';
+            downloadBtn.onmouseout = () => downloadBtn.style.background = '#4f8cc9';
+            div.appendChild(icon);
+            div.appendChild(p);
+            div.appendChild(downloadBtn);
+            preview.appendChild(div);
+        }
+        
+        info.textContent = name || 'Archivo adjunto';
+        fileModal.classList.add('active');
+    }
+
+    async function loadMessages(showNotification = false) {
+        try {
+            const { data, error } = await supabase
+                .from('messages')
+                .select('*')
+                .order('created_at', { ascending: true });
+                
+            if (error) { 
+                updateStatus('❌ Error: ' + error.message, false); 
+                return; 
+            }
+            
+            const oldMessages = messages;
+            messages = data || [];
+            
+            if (showNotification && oldMessages.length > 0 && messages.length > oldMessages.length) {
+                const newMessages = messages.slice(oldMessages.length);
+                const hasNewForEagle = newMessages.some(m => m.sender !== 'eagle' && !m.is_read);
+                const hasNewForRabbit = newMessages.some(m => m.sender !== 'rabbit' && !m.is_read);
+                
+                if (hasNewForEagle) {
+                    cardEagle.style.borderColor = '#4f8cc9';
+                    cardEagle.style.background = '#2b3a4a';
+                    setTimeout(() => {
+                        cardEagle.style.borderColor = 'transparent';
+                        cardEagle.style.background = '#242f3d';
+                    }, 3000);
+                }
+                if (hasNewForRabbit) {
+                    cardRabbit.style.borderColor = '#4f8cc9';
+                    cardRabbit.style.background = '#2b3a4a';
+                    setTimeout(() => {
+                        cardRabbit.style.borderColor = 'transparent';
+                        cardRabbit.style.background = '#242f3d';
+                    }, 3000);
+                }
+                
+                if (isChatOpen && currentUser) {
+                    const hasNewFromOther = newMessages.some(m => m.sender !== currentUser);
+                    if (hasNewFromOther) {
+                        const now = Date.now();
+                        if (now - lastNotificationTime > 2000) {
+                            playNotificationSound();
+                            const sender = newMessages.find(m => m.sender !== currentUser);
+                            const senderName = sender.sender === 'eagle' ? 'Águila' : 'Conejo';
+                            const preview = sender.text || (sender.file_name ? '📎 ' + sender.file_name : '');
+                            showToast(`📩 Nuevo mensaje de ${senderName}: ${preview.substring(0, 30)}`, 'notification', 3000);
+                            lastNotificationTime = now;
+                        }
+                    }
+                }
+            }
+            
+            renderMessages();
+            updateStatus('✅ Conectado', true);
+            
+            if (isChatOpen && currentUser) {
+                setTimeout(() => markMessagesAsRead(), 1000);
+            }
+        } catch (error) {
+            updateStatus('❌ Error de conexión', false);
+        }
+    }
+
+    async function uploadFile(file) {
+        try {
+            const fileExt = file.name.split('.').pop();
+            const fileName = Date.now() + '-' + Math.random().toString(36).substring(7) + '.' + fileExt;
+            const filePath = 'uploads/' + fileName;
+            
+            // Mostrar progreso
+            uploadProgress.classList.add('active');
+            uploadStatus.textContent = `Subiendo ${file.name}...`;
+            progressFill.style.width = '0%';
+            
+            // Subir archivo con progreso
+            const { error: uploadError } = await supabase.storage
+                .from(BUCKET_NAME)
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false,
+                    onProgress: (progress) => {
+                        const percent = (progress.loaded / progress.total) * 100;
+                        progressFill.style.width = percent + '%';
+                    }
+                });
+            
+            uploadProgress.classList.remove('active');
+            
+            if (uploadError) {
+                showToast('Error al subir archivo: ' + uploadError.message, 'error');
+                return null;
+            }
+            
+            const { data: urlData } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
+            
+            return {
+                url: urlData.publicUrl,
+                name: file.name,
+                size: file.size,
+                type: file.type || getMimeType(file.name)
+            };
+        } catch (error) {
+            uploadProgress.classList.remove('active');
+            showToast('Error al subir archivo: ' + error.message, 'error');
+            return null;
+        }
+    }
+
+    function showSelectedFiles(files) {
+        if (files && files.length > 0) {
+            selectedFiles = Array.from(files);
+            if (selectedFiles.length === 1) {
+                const file = selectedFiles[0];
+                selectedFileName.textContent = file.name;
+                selectedFileSize.textContent = getFileSize(file.size);
+                fileInfoContainer.style.display = 'flex';
+            } else {
+                const totalSize = selectedFiles.reduce((sum, f) => sum + f.size, 0);
+                selectedFileName.textContent = `${selectedFiles.length} archivos`;
+                selectedFileSize.textContent = getFileSize(totalSize);
+                fileInfoContainer.style.display = 'flex';
+            }
+        } else {
+            selectedFiles = [];
+            fileInfoContainer.style.display = 'none';
+        }
+    }
+
+    async function sendMessage(text, files = null) {
+        if (!text.trim() && (!files || files.length === 0)) return;
+        if (!currentUser) { showToast('Error: No hay usuario seleccionado', 'error'); return; }
+        
+        sendBtn.disabled = true;
+        messageInput.disabled = true;
+        
+        try {
+            const fileUploads = [];
+            
+            if (files && files.length > 0) {
+                if (!bucketReady) {
+                    bucketReady = await ensureBucketExists();
+                    if (!bucketReady) { 
+                        showToast('❌ Bucket no disponible', 'error'); 
+                        sendBtn.disabled = false;
+                        messageInput.disabled = false;
+                        return; 
+                    }
+                }
+                
+                for (let file of files) {
+                    const uploaded = await uploadFile(file);
+                    if (uploaded) {
+                        fileUploads.push(uploaded);
+                    }
+                }
+                
+                if (fileUploads.length > 0) {
+                    showToast('✅ ' + fileUploads.length + ' archivo(s) subido(s)', 'success', 1500);
+                }
+            }
+            
+            if (fileUploads.length > 0) {
+                for (let fileData of fileUploads) {
+                    const newMsg = {
+                        sender: currentUser,
+                        text: text.trim() || '',
+                        file_url: fileData.url,
+                        file_name: fileData.name,
+                        file_size: fileData.size,
+                        file_type: fileData.type,
+                        is_read: false,
+                        created_at: new Date().toISOString()
+                    };
+                    
+                    const { error } = await supabase.from('messages').insert([newMsg]).select();
+                    if (error) {
+                        showToast('Error al enviar mensaje: ' + error.message, 'error');
+                        sendBtn.disabled = false;
+                        messageInput.disabled = false;
+                        return;
+                    }
+                }
+                messageInput.value = '';
+                showToast('✅ Mensaje enviado', 'success', 1000);
+            } else if (text.trim()) {
+                const newMsg = {
+                    sender: currentUser,
+                    text: text.trim(),
+                    file_url: null,
+                    file_name: null,
+                    file_size: null,
+                    file_type: null,
+                    is_read: false,
+                    created_at: new Date().toISOString()
+                };
+                
+                const { error } = await supabase.from('messages').insert([newMsg]).select();
+                if (error) {
+                    showToast('Error al enviar: ' + error.message, 'error');
+                    sendBtn.disabled = false;
+                    messageInput.disabled = false;
+                    return;
+                }
+                messageInput.value = '';
+                showToast('✅ Mensaje enviado', 'success', 1000);
+            }
+            
+            // Limpiar archivos seleccionados
+            showSelectedFiles(null);
+            fileInput.value = '';
+            
+            await loadMessages(false);
+            
+        } catch (error) {
+            showToast('Error: ' + error.message, 'error');
+        } finally {
+            sendBtn.disabled = false;
+            messageInput.disabled = false;
+            messageInput.focus();
+        }
+    }
+
+    async function deleteSingleMessage(id) {
+        if (currentUser !== 'eagle') { showToast('Solo el Águila puede eliminar mensajes.', 'error'); return; }
+        if (!confirm('¿Eliminar este mensaje?')) return;
+        const { error } = await supabase.from('messages').delete().eq('id', id);
+        if (error) showToast('Error: ' + error.message, 'error');
+        else { showToast('✅ Mensaje eliminado', 'success', 1500); await loadMessages(false); }
+    }
+
+    async function deleteAllMessages() {
+        if (currentUser !== 'eagle') { showToast('Solo el Águila puede borrar toda la conversación.', 'error'); return; }
+        if (!confirm('¿Eliminar TODOS los mensajes?')) return;
+        const { error } = await supabase.from('messages').delete().neq('id', 0);
+        if (error) showToast('Error: ' + error.message, 'error');
+        else { showToast('✅ Conversación eliminada', 'success', 1500); await loadMessages(false); }
+    }
+
+    function setupRealtimeSubscription() {
+        if (channel) {
+            supabase.removeChannel(channel);
+        }
+        
+        channel = supabase.channel('messages-channel', {
+            config: {
+                broadcast: { ack: true }
+            }
+        });
+        
+        channel
+            .on('postgres_changes', { 
+                event: 'INSERT', 
+                schema: 'public', 
+                table: 'messages' 
+            }, (payload) => {
+                console.log('📨 Nuevo mensaje insertado:', payload);
+                if (payload.new) {
+                    loadMessages(true);
+                    
+                    if (isChatOpen && currentUser && payload.new.sender !== currentUser) {
+                        const now = Date.now();
+                        if (now - lastNotificationTime > 2000) {
+                            playNotificationSound();
+                            const senderName = payload.new.sender === 'eagle' ? 'Águila' : 'Conejo';
+                            const preview = payload.new.text || (payload.new.file_name ? '📎 ' + payload.new.file_name : '');
+                            showToast(`📩 Nuevo mensaje de ${senderName}: ${preview.substring(0, 30)}`, 'notification', 3000);
+                            lastNotificationTime = now;
+                        }
+                    }
+                    
+                    if (isChatOpen && currentUser) {
+                        setTimeout(() => markMessagesAsRead(), 1500);
+                    }
+                }
+            })
+            .on('postgres_changes', { 
+                event: 'UPDATE', 
+                schema: 'public', 
+                table: 'messages' 
+            }, (payload) => {
+                console.log('📨 Mensaje actualizado:', payload);
+                loadMessages(false);
+            })
+            .on('postgres_changes', { 
+                event: 'DELETE', 
+                schema: 'public', 
+                table: 'messages' 
+            }, (payload) => {
+                console.log('📨 Mensaje eliminado:', payload);
+                loadMessages(false);
+            })
+            .subscribe((status) => {
+                console.log('📡 Estado de suscripción:', status);
+                if (status === 'SUBSCRIBED') {
+                    reconnectAttempts = 0;
+                    updateStatus('✅ Conectado en tiempo real', true);
+                } else if (status === 'CHANNEL_ERROR') {
+                    updateStatus('⚠️ Error en tiempo real', false);
+                    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                        reconnectAttempts++;
+                        setTimeout(() => setupRealtimeSubscription(), 3000 * reconnectAttempts);
+                    }
+                }
+            });
+    }
+
+    function saveSession() {
+        if (currentUser) {
+            try {
+                sessionStorage.setItem('telegram_user', currentUser);
+            } catch (e) {}
+        }
+    }
+
+    function loadSession() {
+        try {
+            const saved = sessionStorage.getItem('telegram_user');
+            if (saved && (saved === 'eagle' || saved === 'rabbit')) {
+                return saved;
+            }
+        } catch (e) {}
+        return null;
+    }
+
+    function clearSession() {
+        try {
+            sessionStorage.removeItem('telegram_user');
+        } catch (e) {}
+    }
+
+    function startNotificationCheck() {
+        if (notificationCheckInterval) clearInterval(notificationCheckInterval);
+        notificationCheckInterval = setInterval(() => {
+            loadMessages(true);
+        }, 5000);
+    }
+
+    async function enterChat(userType) {
+        currentUser = userType;
+        isChatOpen = true;
+        saveSession();
+        
+        loginScreen.style.display = 'none';
+        chatScreen.classList.add('active');
+        
+        if (userType === 'eagle') {
+            headerIcon.className = 'fas fa-crown';
+            headerIcon.style.color = '#f5b342';
+            headerUsername.innerText = 'Águila';
+        } else {
+            headerIcon.className = 'fas fa-paw';
+            headerIcon.style.color = '#a8c8e0';
+            headerUsername.innerText = 'Conejo';
+        }
+        
+        messageInput.disabled = false;
+        sendBtn.disabled = false;
+        messageInput.focus();
+        updateUserStatus();
+        
+        bucketReady = await ensureBucketExists();
+        await loadMessages(false);
+        setupRealtimeSubscription();
+        startNotificationCheck();
+        
+        setTimeout(() => markMessagesAsRead(), 1000);
+        
+        showToast('✅ Conectado como ' + (userType === 'eagle' ? 'Águila' : 'Conejo'), 'success', 1500);
+    }
+
+    function logout() {
+        isChatOpen = false;
+        if (channel) {
+            supabase.removeChannel(channel);
+        }
+        if (notificationCheckInterval) {
+            clearInterval(notificationCheckInterval);
+            notificationCheckInterval = null;
+        }
+        clearSession();
+        
+        currentUser = null;
+        messages = [];
+        chatMessages.innerHTML = '';
+        chatScreen.classList.remove('active');
+        loginScreen.style.display = 'block';
+        passwordBox.classList.remove('active');
+        passError.innerText = '';
+        passwordInput.value = '';
+        messageInput.disabled = true;
+        sendBtn.disabled = true;
+        
+        updateStatus('⚪ Desconectado', false);
+        userStatus.textContent = '👤 Sin usuario';
+        unreadInfo.textContent = '📬 0 no leídos';
+        document.title = 'Telegram Clon';
+        
+        startNotificationCheck();
+        
+        showToast('Sesión cerrada', 'info', 1500);
+    }
+
+    async function loginAs(userType) {
+        if (userType === 'eagle') {
+            passwordBox.classList.add('active');
+            passError.innerText = '';
+            passwordInput.value = '';
+            passwordInput.focus();
+        } else {
+            await enterChat('rabbit');
+        }
+    }
+
+    async function handleUnlock() {
+        const pass = passwordInput.value.trim();
+        if (pass === 'Bxtmxn') {
+            passError.innerText = '';
+            passwordBox.classList.remove('active');
+            await enterChat('eagle');
+        } else {
+            passError.innerText = 'Contraseña incorrecta';
+            passwordInput.value = '';
+            passwordInput.focus();
+            showToast('Contraseña incorrecta', 'error');
+        }
+    }
+
+    async function handleFileUpload(files) {
+        if (!files || files.length === 0) return;
+        showSelectedFiles(files);
+        // Enviar automáticamente si solo hay archivos y no texto
+        const text = messageInput.value;
+        if (!text.trim() && files.length > 0) {
+            await sendMessage('', files);
+        }
+    }
+
+    function updateStatus(text, isConnected) {
+        statusText.textContent = text;
+        statusText.style.color = isConnected ? '#4caf50' : '#ff6b6b';
+    }
+
+    function updateUserStatus() {
+        if (currentUser === 'eagle') userStatus.textContent = '🦅 Águila (Admin)';
+        else if (currentUser === 'rabbit') userStatus.textContent = '🐇 Conejo';
+        else userStatus.textContent = '👤 Sin usuario';
+    }
+
+    // Event Listeners
+    cardEagle.onclick = () => loginAs('eagle');
+    cardRabbit.onclick = () => loginAs('rabbit');
+    unlockBtn.onclick = handleUnlock;
+    passwordInput.onkeydown = (e) => { if (e.key === 'Enter') handleUnlock(); };
+    
+    sendBtn.onclick = async () => { 
+        const text = messageInput.value;
+        const files = selectedFiles.length > 0 ? selectedFiles : null;
+        await sendMessage(text, files);
+    };
+    
+    messageInput.onkeydown = async (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            const text = messageInput.value;
+            const files = selectedFiles.length > 0 ? selectedFiles : null;
+            await sendMessage(text, files);
+        }
+    };
+    
+    deleteAllBtn.onclick = deleteAllMessages;
+    logoutBtn.onclick = logout;
+    attachBtn.onclick = () => fileInput.click();
+    
+    fileInput.onchange = async (e) => {
+        if (e.target.files.length > 0) {
+            await handleFileUpload(e.target.files);
+        }
+    };
+    
+    removeFileBtn.onclick = () => {
+        showSelectedFiles(null);
+        fileInput.value = '';
+    };
+    
+    closeModal.onclick = () => fileModal.classList.remove('active');
+    fileModal.onclick = (e) => { if (e.target === fileModal) fileModal.classList.remove('active'); };
+    
+    chatMessages.addEventListener('scroll', () => {
+        if (isChatOpen && currentUser) {
+            markMessagesAsRead();
+        }
+    });
+    
+    chatMessages.addEventListener('click', () => {
+        if (isChatOpen && currentUser) {
+            markMessagesAsRead();
+        }
+    });
+
+    // Inicializar
+    loginScreen.style.display = 'block';
+    chatScreen.classList.remove('active');
+    messageInput.disabled = true;
+    sendBtn.disabled = true;
+    updateStatus('⚪ Desconectado', false);
+    updateUserStatus();
+    unreadInfo.textContent = '📬 0 no leídos';
+    
+    startNotificationCheck();
+    
+    const savedUser = loadSession();
+    if (savedUser) {
+        setTimeout(() => enterChat(savedUser), 500);
+    }
+
+    (async () => {
+        const { error } = await supabase.from('messages').select('count');
+        if (error) {
+            updateStatus('❌ Error de conexión', false);
+            if (error.message.includes('relation "messages" does not exist')) {
+                showToast('⚠️ Crea la tabla "messages" en SQL Editor', 'error', 5000);
+            }
+        } else {
+            updateStatus('✅ Conectado', true);
+        }
+        bucketReady = await ensureBucketExists();
+        await loadMessages(false);
+    })();
+
+})();
+</script>
+</body>
+</html>
